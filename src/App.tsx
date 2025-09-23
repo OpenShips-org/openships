@@ -1,8 +1,9 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { ThemeProvider } from './contexts/ThemeContext';
+import { ThemeProvider } from './context/ThemeContext';
 
 import NavBar from './components/NavBar';
 import Map from './components/Map';
+import AccountPage from './components/AccountPage';
 
 function App() {
 	return (
@@ -14,7 +15,7 @@ function App() {
 					<Route path="/" element={<Map />}/>
 					<Route path="/vessels" element={<div className='mt-30 text-center'>Vessels</div>}/>
 					<Route path="/gallery" element={<div className='mt-30 text-center'>Vessel Gallery</div>}/>
-					<Route path="/account" element={<div className='mt-30 text-center'>Account</div>}/>
+					<Route path="/account" element={<AccountPage />}/>
 					<Route path="/settings" element={<div className='mt-30 text-center'>Settings</div>}/>
 					
 				</Routes>
