@@ -12,87 +12,60 @@ function NavBar() {
     if (isMobile) {
         return (
             <div className="fixed w-full h-14 bg-gray-500 bottom-0 p-2 flex justify-between items-center z-50">
-                <Link
-                    to="/settings"
-                    className="relative flex-1 flex justify-start"
-                    aria-label="Settings"
-                    tabIndex={0}
-                >
-                    <button
-                        className="absolute -top-15 left-1/2 -translate-x-1/2 bg-white rounded-full shadow-lg flex items-center justify-center w-16 h-16 border-4 border-gray-500 active:scale-95 cursor-pointer transition-transform duration-150 hover:bg-gray-100 active:bg-gray-300"
-                        role="button"
-                        tabIndex={0}
+                {/* Left: Settings */}
+                <div className="relative flex-1 flex justify-start">
+                    <Link
+                        to="/settings"
                         aria-label="Settings"
+                        className="absolute -top-15 left-1/2 -translate-x-1/2 bg-white rounded-full shadow-lg flex items-center justify-center w-16 h-16 border-4 border-gray-500 active:scale-95 cursor-pointer transition-transform duration-150 hover:bg-gray-100 active:bg-gray-300"
                     >
                         <FaCog className="text-gray-700 text-6xl p-2" />
-                    </button>
-                </Link>
-                
-                <Link
-                    to="/account"
-                    className="relative flex-1 flex justify-start"
-                    aria-label="Account"
-                    tabIndex={0}
-                >
-                    <button
-                        className="absolute -top-15 left-1/2 -translate-x-1/2 bg-white rounded-full shadow-lg flex items-center justify-center w-16 h-16 border-4 border-gray-500 active:scale-95 cursor-pointer transition-transform duration-150 hover:bg-gray-100 active:bg-gray-300"
-                        role="button"
-                        tabIndex={0}
-                        aria-label="Account"
-                    >
-                        <MdAccountCircle className="text-gray-700 text-6xl p-1" />
-                    </button>
-                </Link>
-
-                <div className="relative flex-1 flex justify-center">
-                    <Link
-                        to="/"
-                        className="absolute -top-18 left-1/2 -translate-x-1/2"
-                        aria-label="Map"
-                        tabIndex={0}
-                    >
-                        <button 
-                            className="bg-white rounded-full shadow-lg flex items-center justify-center w-20 h-20 border-4 border-gray-500 active:scale-95 cursor-pointer transition-transform duration-150 hover:bg-gray-100 active:bg-gray-300"
-                            role="button"
-                            tabIndex={0}
-                            aria-label="Map"
-                        >
-                            <FaMap className="text-5xl text-gray-700" />
-                        </button>
                     </Link>
                 </div>
 
-                <Link
-                    to="/vessels"
-                    className="relative flex-1 flex justify-center"
-                    aria-label="Vessel List"
-                    tabIndex={0}
-                >
-                    <button
+                {/* Left middle: Account */}
+                <div className="relative flex-1 flex justify-start">
+                    <Link
+                        to="/account"
+                        aria-label="Account"
                         className="absolute -top-15 left-1/2 -translate-x-1/2 bg-white rounded-full shadow-lg flex items-center justify-center w-16 h-16 border-4 border-gray-500 active:scale-95 cursor-pointer transition-transform duration-150 hover:bg-gray-100 active:bg-gray-300"
-                        role="button"
-                        tabIndex={0}
+                    >
+                        <MdAccountCircle className="text-gray-700 text-6xl p-1" />
+                    </Link>
+                </div>
+
+                {/* Center: Map */}
+                <div className="relative flex-1 flex justify-center">
+                    <Link
+                        to="/"
+                        aria-label="Map"
+                        className="absolute -top-18 left-1/2 -translate-x-1/2 bg-white rounded-full shadow-lg flex items-center justify-center w-20 h-20 border-4 border-gray-500 active:scale-95 cursor-pointer transition-transform duration-150 hover:bg-gray-100 active:bg-gray-300"
+                    >
+                        <FaMap className="text-5xl text-gray-700" />
+                    </Link>
+                </div>
+
+                {/* Right middle: Vessels */}
+                <div className="relative flex-1 flex justify-center">
+                    <Link
+                        to="/vessels"
                         aria-label="Vessel List"
+                        className="absolute -top-15 left-1/2 -translate-x-1/2 bg-white rounded-full shadow-lg flex items-center justify-center w-16 h-16 border-4 border-gray-500 active:scale-95 cursor-pointer transition-transform duration-150 hover:bg-gray-100 active:bg-gray-300"
                     >
                         <FaShip className="text-gray-700 text-5xl p-1.5" />
-                    </button>
-                </Link>
+                    </Link>
+                </div>
 
-                <Link
-                    to="/gallery"
-                    className="relative flex-1 flex justify-center"
-                    aria-label="Gallery"
-                    tabIndex={0}
-                >
-                    <button
-                        className="absolute -top-15 left-1/2 -translate-x-1/2 bg-white rounded-full shadow-lg flex items-center justify-center w-16 h-16 border-4 border-gray-500 active:scale-95 cursor-pointer transition-transform duration-150 hover:bg-gray-100 active:bg-gray-300"
-                        role="button"
-                        tabIndex={0}
+                {/* Right: Gallery */}
+                <div className="relative flex-1 flex justify-center">
+                    <Link
+                        to="/gallery"
                         aria-label="Gallery"
+                        className="absolute -top-15 left-1/2 -translate-x-1/2 bg-white rounded-full shadow-lg flex items-center justify-center w-16 h-16 border-4 border-gray-500 active:scale-95 cursor-pointer transition-transform duration-150 hover:bg-gray-100 active:bg-gray-300"
                     >
                         <FaRegImages className="text-gray-700 text-5xl p-1.5" />
-                    </button>
-                </Link>
+                    </Link>
+                </div>
             </div>
         );
     }

@@ -3,8 +3,9 @@ import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 
 import NavBar from './components/NavBar';
+import { ThemeToggle } from './theme';
 import Map from './components/Map';
-import AccountPage from './components/AccountPage';
+import AccountPage from './components/account/AccountPage';
 
 function App() {
 	return (
@@ -12,6 +13,7 @@ function App() {
 			<AuthProvider>
 				<BrowserRouter>
 					<NavBar />
+					<ThemeToggle />
 					<Routes>
 
 						<Route path="/" element={<Map />}/>

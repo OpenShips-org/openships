@@ -1,5 +1,5 @@
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, deleteUser } from "firebase/auth";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "../services/firebase";
 
 async function isUsernameTaken(username: string): Promise<boolean> {
@@ -8,8 +8,14 @@ async function isUsernameTaken(username: string): Promise<boolean> {
     return docSnap.exists();
 }
 
-async function saveUsername(username: string, uid: string): Promise<void> {
-    await setDoc(doc(db, "users", uid), { username }, { merge: true });
+async function saveUsername(username: string, uid: string, email: string): Promise<void> {
+    // Save username, email and a server-side createdAt timestamp in the users collection.
+    await setDoc(
+        doc(db, "users", uid),
+        { username, email, createdAt: serverTimestamp() },
+        { merge: true }
+    );
+    // Mirror username -> uid mapping for quick lookups
     await setDoc(doc(db, "usernames", username), { uid });
 }
 
@@ -35,7 +41,7 @@ export async function register(email: string, password: string, username: string
     }
 
     try {
-        await saveUsername(username, user.uid);
+        await saveUsername(username, user.uid, email);
     } catch (err: any) {
         // If saving the username fails, log it and throw a clear error.
         // Attempt a best-effort rollback by deleting the newly created auth user to avoid orphaned accounts.

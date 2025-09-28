@@ -37,6 +37,11 @@ import TankerVesselLayer from './mapLayers/Vessels/TankerVesselLayer';
 import SailingVesselLayer from './mapLayers/Vessels/SailingVesselLayer';
 import OtherVesselLayer from './mapLayers/Vessels/OtherVesselLayer';
 
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '@/services/firebase';
+
+import { getUserSettings, saveUserSettings } from '@/services/userSettingService';
+
 interface ViewportBounds {
     minLat: number;
     maxLat: number;
@@ -46,33 +51,72 @@ interface ViewportBounds {
 
 // Debounce helper function
 const debounce = (func: Function, delay: number) => {
-  let timeoutId: NodeJS.Timeout;
+  let timeoutId: number | undefined;
   return (...args: any[]) => {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => func(...args), delay);
+    if (timeoutId) {
+      window.clearTimeout(timeoutId);
+    }
+    timeoutId = window.setTimeout(() => func(...args), delay);
   };
 };
 
 const Map = React.memo(({}) => {
-    // Initial view state mit gespeicherten Werten oder Standardwerten
-    const [viewState, setViewState] = useState(() => {
-        // Versuchen, gespeicherte Koordinaten aus localStorage zu laden
-        const savedPosition = localStorage.getItem('mapPosition');
-        if (savedPosition) {
-            try {
-                return JSON.parse(savedPosition);
-            } catch (e) {
-                console.error('Fehler beim Parsen der gespeicherten Kartenposition:', e);
-            }
-        }
-        
-        // Standardwerte, falls keine gespeicherten Daten existieren
-        return {
-            longitude: 0,
-            latitude: 0,
-            zoom: 2,
-        };
+
+    const [ uid, setUid ] = useState<string | null>(null);
+
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            setUid(user ? user.uid : null);
+        });
+        return () => unsubscribe();
+    }, []);
+
+    // Initial synchronous default view state. Settings are loaded asynchronously
+    // in a useEffect that depends on `uid` (so it reacts when auth state becomes available).
+    const [viewState, setViewState] = useState({
+        latitude: 20,
+        longitude: 0,
+        zoom: 2,
+        pitch: 0,
+        bearing: 0
     });
+
+    // Load saved user settings (from server if logged in, otherwise localStorage).
+    useEffect(() => {
+        let mounted = true;
+
+        (async () => {
+            try {
+                if (uid) {
+                    try {
+                        const settings = await getUserSettings(uid);
+                        if (mounted && settings?.mapPosition) {
+                            const { latitude, longitude, zoom } = settings.mapPosition;
+                            setViewState({ latitude, longitude, zoom, pitch: 0, bearing: 0 });
+                            return;
+                        }
+                    } catch (e) {
+                        console.error('Failed to load user map position:', e);
+                    }
+                }
+
+                // Fallback to localStorage
+                const savedPosition = localStorage.getItem('mapPosition');
+                if (mounted && savedPosition) {
+                    try {
+                        const { latitude, longitude, zoom } = JSON.parse(savedPosition);
+                        setViewState({ latitude, longitude, zoom, pitch: 0, bearing: 0 });
+                    } catch (err) {
+                        console.error('Failed to parse saved map position:', err);
+                    }
+                }
+            } catch (err) {
+                console.error('Error while loading map position:', err);
+            }
+        })();
+
+        return () => { mounted = false; };
+    }, [uid]);
 
     const [layerVisibility, setLayerVisibility] = useState({
         osm: true,
@@ -108,17 +152,58 @@ const Map = React.memo(({}) => {
         []
     );
 
+    // Debounced Firestore saving
+    const savePositionToFirestore = useCallback(
+        debounce(async (uid: string, newViewState: any) => {
+            try {
+                await saveUserSettings(uid, {
+                    mapPosition: {
+                        longitude: newViewState.longitude,
+                        latitude: newViewState.latitude,
+                        zoom: newViewState.zoom,
+                    }
+                });
+            } catch (err) {
+                console.error('Failed to save map position to Firestore:', err);
+            }
+        }, 1000),[]
+    );
+
+    // Upload Local Storage position to Firestore on login
+    useEffect(() => {
+        if (!uid) return;
+        const savedPosition = localStorage.getItem('mapPosition');
+        if (!savedPosition) return;
+        try {
+            const parsed = JSON.parse(savedPosition);
+            savePositionToFirestore(uid, parsed);
+        } catch (err) {
+            console.error('Failed to parse saved map position for upload:', err);
+        }
+    }, [uid, savePositionToFirestore]);
+
     // Update viewport bounds
-    const updateViewportBounds = useCallback((viewState: any) => {
-        const viewport = new WebMercatorViewport(viewState);
-        const bounds = viewport.getBounds();
-        
-        setViewportBounds({
-            minLon: bounds[0],
-            minLat: bounds[1],
-            maxLon: bounds[2],
-            maxLat: bounds[3]
-        });
+    const updateViewportBounds = useCallback((vs: any) => {
+        if (!vs) return;
+        // WebMercatorViewport requires width/height for correct bounds calculation.
+        // Use the current window size as DeckGL is full-screen in this app.
+        try {
+            const viewport = new WebMercatorViewport({
+                ...vs,
+                width: window.innerWidth,
+                height: window.innerHeight
+            });
+            const bounds = viewport.getBounds();
+            setViewportBounds({
+                minLon: bounds[0],
+                minLat: bounds[1],
+                maxLon: bounds[2],
+                maxLat: bounds[3]
+            });
+        } catch (err) {
+            // Guard against any runtime errors from invalid view state
+            console.error('Failed to update viewport bounds:', err);
+        }
     }, []);
 
     // Initial viewport bounds
@@ -131,7 +216,10 @@ const Map = React.memo(({}) => {
         setViewState(newViewState);
         savePositionToLocalStorage(newViewState);
         updateViewportBounds(newViewState);
-    }, [savePositionToLocalStorage, updateViewportBounds]);
+        if (uid) {
+            savePositionToFirestore(uid, newViewState);
+        }
+    }, [savePositionToLocalStorage, updateViewportBounds, uid, savePositionToFirestore]);
 
     // Create vessel layers outside of useMemo to avoid hooks violation
     const wigVesselLayer = WIGVesselLayer({ visible: layerVisibility.wigVessels, viewportBounds });
