@@ -1,69 +1,40 @@
-# React + TypeScript + Vite
+# OpenShips
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+OpenShips is an open-source platform aiming to provide real-time ship tracking and maritime data, serving as an alternative to VesselFinder and MarineTraffic.
 
-Currently, two official plugins are available:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Features
 
-## Expanding the ESLint configuration
+- Real-time AIS (Automatic Identification System) map
+- Potential future user-contributed data sources
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Data Sources
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- [AISStream.io](aisstream.io) (current)
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+## Future Plans
+- Incorporate crowd-sourced ship data from users
+- Expand analytics and vessel information beyond AIS
+- AR-based ship identification
+- Advanced analytics and vessel history
+- Alerts and notifications
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Technology Stack
+- Frontend: React, Deck.gl, Mapbox GL
+- Data: AIS streams via AISStream.io
+- Open Source: Designed for community contributions and enhancements
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Contributors
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+<div style="display:flex; justify-content:center; flex-wrap:wrap; gap:20px;">
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+  <!-- Contributor 1 -->
+  <div style="text-align:center;">
+    <a href="https://github.com/Alexius25">
+      <img src="https://github.com/Alexius25.png?size=480" width="75" style="border-radius:50%" title="Alexius25" />
+    </a>
+    <div>
+      <img src="https://img.shields.io/badge/Practicly_Everything-blue?style=flat-square&logo=react" />
+    </div>
+  </div>
+</div>
