@@ -3,6 +3,8 @@
 OpenShips is an open-source platform aiming to provide real-time ship tracking and maritime data, serving as an alternative to VesselFinder and MarineTraffic.
 
 
+This project is licensed under the MIT License – see the LICENSE file for details.
+
 ## Features
 
 - Real-time AIS (Automatic Identification System) map
