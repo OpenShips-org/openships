@@ -39,7 +39,7 @@ export default function LoginForm() {
             {error && <div className="text-red-500 mb-4 text-center">{error}</div>}
             <form onSubmit={handleSubmit}>
                 <div className="mb-4">
-                    <label className="block text-gray-700 mb-2" htmlFor="email">Email</label>
+                    <label className="block mb-1 font-semibold" htmlFor="email">Email</label>
                     <input
                         type="email"
                         id="email"
@@ -51,7 +51,7 @@ export default function LoginForm() {
                     />
                 </div>
                 <div className="mb-4">
-                    <label className="block text-gray-700 mb-2" htmlFor="password">Password</label>
+                    <label className="block mb-1 font-semibold" htmlFor="password">Password</label>
                     <input
                         type="password"
                         id="password"
@@ -64,7 +64,7 @@ export default function LoginForm() {
                 </div>
                 <button
                     type="submit"
-                    className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 disabled:opacity-50"
+                    className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700 transition cursor-pointer duration-200 disabled:opacity-50"
                     disabled={loading}
                 >
                     {loading ? "Logging in..." : "Login"}
