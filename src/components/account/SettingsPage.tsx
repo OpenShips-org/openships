@@ -1,10 +1,9 @@
-import React, { useEffect, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 
 import { Switch } from '../ui/switch';
 
 import useIsMobile from '@/hooks/isMobile';
 import { useTheme } from '@/context/ThemeContext';
-import { Handshake } from 'lucide-react';
 
 const SettingsPage = () => {
 
