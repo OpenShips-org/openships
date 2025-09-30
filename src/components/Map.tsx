@@ -324,7 +324,7 @@ const Map = React.memo(({}) => {
                 <div className={`absolute ${isMobile ? "top-6 right-6" : "top-20 right-4"} z-50`}>
                     <Popover>
                         <PopoverTrigger asChild>
-                            <div className="bg-white/70 p-2.5 rounded-full cursor-pointer text-xl hover:bg-white/90 transition-colors">
+                            <div className="bg-white/70 p-2.5 rounded-full cursor-pointer text-xl hover:bg-white/90 transition-colors dark:bg-gray-900 dark:text-white">
                                 <FaLayerGroup />
                             </div>
                         </PopoverTrigger>

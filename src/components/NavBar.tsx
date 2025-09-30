@@ -11,15 +11,15 @@ function NavBar() {
 
     if (isMobile) {
         return (
-            <div className="fixed w-full h-14 bg-gray-500 bottom-0 p-2 flex justify-between items-center z-50">
-                {/* Left: Settings */}
+            <div className="fixed w-full h-14 bg-gray-500 bottom-0 p-2 flex justify-between items-center z-50 dark:bg-gray-900">
+                {/* Left: AR */}
                 <div className="relative flex-1 flex justify-start">
                     <Link
-                        to="/settings"
-                        aria-label="Settings"
+                        to="/ar"
+                        aria-label="Augmented Reality"
                         className="absolute -top-15 left-1/2 -translate-x-1/2 bg-white rounded-full shadow-lg flex items-center justify-center w-16 h-16 border-4 border-gray-500 active:scale-95 cursor-pointer transition-transform duration-150 hover:bg-gray-100 active:bg-gray-300"
                     >
-                        <FaCog className="text-gray-700 text-6xl p-2" />
+                        <span className="text-gray-700 text-3xl p-2 font-bold">AR</span>
                     </Link>
                 </div>
 
@@ -72,15 +72,15 @@ function NavBar() {
 
     return (
         <div
-            className="fixed w-full h-16 bg-gray-500 top-0 p-2 shadow-lg z-50"
+            className="fixed w-full h-16 bg-gray-500 top-0 p-2 shadow-lg z-50 dark:bg-gray-900"
         >
             <div className="max-w-7xl h-full flex justify-between items-center px-4">
                 <Link
                     to="/"
-                    className="text-gray-700 text-2xl font-bold flex items-center space-x-2"
+                    className="text-gray-700 dark:text-white text-2xl font-bold flex items-center space-x-2"
                 >
                     <LuShip
-                        className="text-4xl text-gray-700 mr-2"
+                        className="text-4xl text-gray-700 dark:text-white mr-2"
                     /> OpenShips
                 </Link>
             </div>
