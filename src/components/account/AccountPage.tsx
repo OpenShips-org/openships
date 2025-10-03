@@ -11,8 +11,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FaCog } from "react-icons/fa";
 import { Link } from "react-router-dom";
 
-import { sendVerificationEmail } from "@/services/authService";
-
 const AccountPage = () => {
     const { user } = useAuth();
     const [username, setUsername] = useState<string | null>(null);
