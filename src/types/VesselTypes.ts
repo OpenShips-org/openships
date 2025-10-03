@@ -4,18 +4,12 @@ type VesselPosition = {
     Timestamp: string;
     Latitude: number;
     Longitude: number;
-    NavigationalStatus: {
-        ID: number;
-        String: string;
-    };
+    NavigationalStatus: number;
     RateOfTurn: number;
     SpeedOverGround: number;
     CourseOverGround: number;
     TrueHeading: number;
-    VesselType: {
-        ID: number;
-        String: string;
-    };
+    VesselType: number;
 }
 
 export type { VesselPosition };

@@ -1,4 +1,4 @@
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, deleteUser } from "firebase/auth";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, deleteUser, sendEmailVerification } from "firebase/auth";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "../services/firebase";
 
@@ -80,4 +80,12 @@ export async function getUsername(uid: string): Promise<string | null> {
         return data.username || null;
     }
     return null;
+}
+
+export async function sendVerificationEmail() {
+    if (auth.currentUser) {
+        await sendEmailVerification(auth.currentUser);
+    } else {
+        throw new Error("No authenticated user");
+    }
 }
