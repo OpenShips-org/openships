@@ -1,93 +1,31 @@
-import { IconLayer } from "@deck.gl/layers";
-import { useEffect, useState, useRef, useCallback } from "react";
+import { IconLayer, TextLayer } from "@deck.gl/layers";
+import { useVesselPosition } from "@/hooks/useVesselData";
+import type ViewportBounds from "@/interfaces/ViewportBounds";
 
-import type { VesselPosition } from "@/types/VesselTypes";
-
-import { api_url } from "@/config";
-
-interface ViewportBounds {
-    minLat: number;
-    maxLat: number;
-    minLon: number;
-    maxLon: number;
-}
+const VesselTypes = "58";
 
 function MedicalTransportLayer({ 
     visible = true, 
-    viewportBounds 
+    viewportBounds,
+    showNames = false,
+    iconSize = 40,
+    textSize = 12
 }: { 
     visible?: boolean;
     viewportBounds?: ViewportBounds;
-} = {}): IconLayer {
-    
-    const [ MedicalTransportVessels, setMedicalTransportVessels ] = useState<VesselPosition[]>([]);
-    const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const currentViewportBoundsRef = useRef<ViewportBounds | undefined>(viewportBounds);
+    showNames?: boolean;
+    iconSize?: number;
+    textSize?: number;
+}) {
+    const { vessels } = useVesselPosition({
+        visible,
+        viewportBounds,
+        vesselTypes: VesselTypes
+    });
 
-    const fetchMedicalTransportVessels = useCallback((bounds: ViewportBounds) => {
-        const params = new URLSearchParams({
-            minLat: bounds.minLat.toString(),
-            maxLat: bounds.maxLat.toString(),
-            minLon: bounds.minLon.toString(),
-            maxLon: bounds.maxLon.toString(),
-            vesselTypes: "58" // Medical Transport Vessels
-        });
-
-        fetch(`${api_url}/v1/vessels/position/all?${params}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => setMedicalTransportVessels(data))
-            .catch(error => console.error('Error fetching Medical Transport Vessels:', error));
-    }, []);
-
-    // Update current bounds reference
-    currentViewportBoundsRef.current = viewportBounds;
-
-    // Handle viewport changes with debouncing
-    useEffect(() => {
-        if (!visible || !viewportBounds) return;
-
-        // Clear any existing timeout
-        if (debounceTimeoutRef.current) {
-            clearTimeout(debounceTimeoutRef.current);
-        }
-
-        // Set new timeout to fetch data after user stops moving
-        debounceTimeoutRef.current = setTimeout(() => {
-            if (currentViewportBoundsRef.current) {
-                fetchMedicalTransportVessels(currentViewportBoundsRef.current);
-            }
-        }, 250); // Wait 250ms after user stops moving
-
-        // Cleanup function
-        return () => {
-            if (debounceTimeoutRef.current) {
-                clearTimeout(debounceTimeoutRef.current);
-            }
-        };
-    }, [visible, viewportBounds, fetchMedicalTransportVessels]);
-
-    // Handle periodic updates
-    useEffect(() => {
-        if (!visible || !viewportBounds) return;
-
-        const interval = setInterval(() => {
-            if (currentViewportBoundsRef.current) {
-                fetchMedicalTransportVessels(currentViewportBoundsRef.current);
-            }
-        }, 30000);
-
-        return () => clearInterval(interval);
-    }, [visible, fetchMedicalTransportVessels]);
-        
-
-    return new IconLayer({
+    const iconLayer = new IconLayer({
         id: "medical-transport-layer",
-        data: MedicalTransportVessels,
+        data: vessels,
         visible,
         pickable: true,
         getPosition: (d) => [d.Longitude, d.Latitude],
@@ -96,9 +34,28 @@ function MedicalTransportLayer({
             height: 512,
             width: 360,
         }),
-        getAngle: (d) => d.TrueHeading == 511 ? 0: 360 - (d.TrueHeading || 0),
-        getSize: 40,
+        getAngle: (d) => d.TrueHeading === 511 ? 0 : 360 - (d.TrueHeading || 0),
+        getSize: iconSize,
     });
+
+    const textLayer = new TextLayer({
+        id: "medical-transport-names",
+        data: vessels,
+        visible: visible && showNames,
+        pickable: false,
+        getPosition: (d) => [d.Longitude, d.Latitude],
+        getText: (d) => d.ShipName || "",
+        getSize: textSize,
+        getColor: [0, 0, 0, 255],
+        getAngle: 0,
+        getTextAnchor: "start",
+        getAlignmentBaseline: "center",
+        getPixelOffset: [10, -25],
+        fontFamily: "Arial",
+        fontWeight: "bold",
+    });
+
+    return [iconLayer, textLayer];
 }
 
 export default MedicalTransportLayer;
