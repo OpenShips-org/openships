@@ -4,7 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 
 import NavBar from './components/NavBar';
 
-import Map from './components/Map';
+import Map from './components/map/Map';
 import AccountPage from './components/account/AccountPage';
 import SettingsPage from './components/account/SettingsPage';
 
