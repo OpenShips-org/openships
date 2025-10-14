@@ -37,6 +37,11 @@ import TankerVesselLayer from './Vessels/TankerVesselLayer';
 import SailingVesselLayer from './Vessels/SailingVesselLayer';
 import OtherVesselLayer from './Vessels/OtherVesselLayer';
 
+import { IsLoggedIn } from '@/services/authService';
+import { getAuth } from 'firebase/auth';
+
+import { getUserSettings, saveUserSettings } from '@/services/userSettingService';
+
 // Vessel Layer Configuration
 const VESSEL_LAYER_CONFIG = [
   { key: 'wigVessels' as const, Component: WIGVesselLayer, label: 'Wing in Ground Vessels' },
@@ -116,6 +121,22 @@ const Map = React.memo(({}) => {
     });
 
     const [viewportBounds, setViewportBounds] = useState<ViewportBounds>();
+
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+    useEffect(() => {
+        const checkLoginStatus = async () => {
+            try {
+                const loggedIn = await IsLoggedIn();
+                setIsLoggedIn(loggedIn);
+            } catch (err) {
+                console.error('Error checking login status:', err);
+                setIsLoggedIn(false);
+            }
+        };
+
+        checkLoginStatus();
+    }, []);
     
     // Debounced localStorage saving
     const savePositionToLocalStorage = useCallback(
@@ -172,11 +193,30 @@ const Map = React.memo(({}) => {
     }), []);
     
     const toggleLayer = useCallback((layerName: keyof typeof layerVisibility) => {
-        setLayerVisibility(prev => ({
-            ...prev,
-            [layerName]: !prev[layerName]
-        }));
-    }, []);
+        setLayerVisibility(prev => {
+            const newVisibility = { ...prev, [layerName]: !prev[layerName] };
+            logStateChange('Toggle layer', { layerName, newState: !prev[layerName] });
+
+            try {
+                // Double-check current auth state directly
+                const auth = getAuth(); // Import getAuth from firebase/auth at the top
+                const currentUser = auth.currentUser;
+
+                if (currentUser && isLoggedIn) {
+                    saveUserSettings('mapLayerVisibility', newVisibility)
+                        .then(() => logStateChange('Saved to Firestore', newVisibility))
+                        .catch(err => console.error('Failed to save user settings:', err));
+                } else {
+                    localStorage.setItem('mapLayerVisibility', JSON.stringify(newVisibility));
+                    logStateChange('Saved to localStorage', newVisibility);
+                }
+            } catch (err) {
+                console.error('Error saving layer visibility:', err);
+            }
+
+            return newVisibility;
+        });
+    }, [isLoggedIn]);
 
     // Call all vessel layer hooks at the top level
     const wigVesselLayers = WIGVesselLayer({ visible: layerVisibility.wigVessels, viewportBounds, showNames: layerVisibility.vesselNames });
@@ -248,6 +288,40 @@ const Map = React.memo(({}) => {
     ]);
 
     const isMobile = useIsMobile();
+
+    const logStateChange = (source: string, data: any) => {
+        console.log(`[${source}]`, data);
+    };
+
+    // Load user Settings from firestore if logged in, otherwise use localStorage
+    useEffect(() => {
+    const loadSettings = async () => {
+        try {
+            if (isLoggedIn) {
+                const settings = await getUserSettings('mapLayerVisibility');
+                if (settings) {
+                    logStateChange('Firestore settings loaded', settings);
+                    setLayerVisibility(prev => ({ ...prev, ...settings }));
+                } else {
+                    logStateChange('No Firestore settings found', null);
+                }
+            } else {
+                const savedSettings = localStorage.getItem('mapLayerVisibility');
+                if (savedSettings) {
+                    const parsedSettings = JSON.parse(savedSettings);
+                    logStateChange('LocalStorage settings loaded', parsedSettings);
+                    setLayerVisibility(prev => ({ ...prev, ...parsedSettings }));
+                } else {
+                    logStateChange('No localStorage settings found', null);
+                }
+            }
+        } catch (err) {
+            console.error('Error loading layer visibility settings:', err);
+        }
+    };
+    
+    loadSettings();
+}, [isLoggedIn]);
 
     return (
         <>

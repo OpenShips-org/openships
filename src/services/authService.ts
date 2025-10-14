@@ -89,3 +89,13 @@ export async function sendVerificationEmail() {
         throw new Error("No authenticated user");
     }
 }
+
+export async function IsLoggedIn(): Promise<boolean> {
+    return new Promise((resolve) => {
+        const unsubscribe = auth.onAuthStateChanged((user) => {
+            unsubscribe();
+            resolve(!!user);
+        });
+    });
+}
+

@@ -35,8 +35,5 @@ This project is licensed under the MIT License – see the LICENSE file for deta
     <a href="https://github.com/Alexius25">
       <img src="https://github.com/Alexius25.png?size=480" width="75" style="border-radius:50%" title="Alexius25" />
     </a>
-    <div>
-      <img src="https://img.shields.io/badge/Practicly_Everything-blue?style=flat-square&logo=react" />
-    </div>
   </div>
 </div>
