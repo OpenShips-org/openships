@@ -4,7 +4,7 @@ type VesselPosition = {
     Timestamp: string;
     Latitude: number;
     Longitude: number;
-    NavigationalStatus: number;
+    NavigationStatus: number;
     RateOfTurn: number;
     SpeedOverGround: number;
     CourseOverGround: number;

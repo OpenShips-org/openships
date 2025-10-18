@@ -1,6 +1,7 @@
 import { IconLayer, TextLayer } from "@deck.gl/layers";
 import { useVesselPosition } from "@/hooks/useVesselData";
 import type ViewportBounds from "@/interfaces/ViewportBounds";
+import { GetIcon, GetAngle, GetSize } from "@/lib/vesselUtils";
 
 const VesselTypes = "70,71,72,73,74,75,76,77,78,79";
 
@@ -8,7 +9,6 @@ function CargoVesselLayer({
     visible = true, 
     viewportBounds,
     showNames = false,
-    iconSize = 40,
     textSize = 12
 }: { 
     visible?: boolean;
@@ -29,13 +29,9 @@ function CargoVesselLayer({
         visible,
         pickable: true,
         getPosition: (d) => [d.Longitude, d.Latitude],
-        getIcon: () => ({
-            url: '/Ship-Icon.png',
-            height: 512,
-            width: 360,
-        }),
-        getAngle: (d) => d.TrueHeading === 511 ? 0 : 360 - (d.TrueHeading || 0),
-        getSize: iconSize,
+        getIcon: (d) => GetIcon(d),
+        getAngle: (d) => GetAngle(d),
+        getSize: (d) => GetSize(d),
     });
 
     const textLayer = new TextLayer({

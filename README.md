@@ -3,16 +3,15 @@
 OpenShips is an open-source platform aiming to provide real-time ship tracking and maritime data, serving as an alternative to VesselFinder and MarineTraffic.
 
 
-This project is licensed under the MIT License – see the LICENSE file for details.
+This project is licensed under the MIT License – see the [LICENSE](LICENSE.md) file for details.
 
 ## Features
 
 - Real-time AIS (Automatic Identification System) map
-- Potential future user-contributed data sources
 
 ## Data Sources
 
-- [AISStream.io](aisstream.io) (current)
+- [AISStream.io](aisstream.io)
 
 ## Future Plans
 - Incorporate crowd-sourced ship data from users
@@ -22,7 +21,7 @@ This project is licensed under the MIT License – see the LICENSE file for deta
 - Alerts and notifications
 
 ## Technology Stack
-- Frontend: React, Deck.gl, Mapbox GL
+- Frontend: React, Deck.gl, OSM
 - Data: AIS streams via AISStream.io
 - Open Source: Designed for community contributions and enhancements
 
