@@ -9,7 +9,6 @@ function TowingVesselLayer({
     visible = true, 
     viewportBounds,
     showNames = false,
-    iconSize = 40,
     textSize = 12
 }: { 
     visible?: boolean;
