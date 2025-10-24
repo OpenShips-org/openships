@@ -9,6 +9,7 @@ interface UseVesselPositionOptions {
     vesselTypes: string; // Comma-separated string of vessel type codes
     debounceMs?: number; // Optional debounce time in milliseconds
     refreshIntervalMs?: number; // Optional refresh interval in milliseconds
+    limit?: number; // Optional limit on number of vessels to fetch
 }
 
 export function useVesselPosition({ 
@@ -16,7 +17,8 @@ export function useVesselPosition({
     viewportBounds,
     vesselTypes,
     debounceMs = 250,
-    refreshIntervalMs = 30000 
+    refreshIntervalMs = 30000, 
+    limit = 1000
 }: UseVesselPositionOptions) {
     const [vessels, setVessels] = useState<VesselPosition[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -33,7 +35,8 @@ export function useVesselPosition({
             maxLat: bounds.maxLat.toString(),
             minLon: bounds.minLon.toString(),
             maxLon: bounds.maxLon.toString(),
-            vesselTypes
+            vesselTypes,
+            limit: limit.toString()
         });
 
         try {
