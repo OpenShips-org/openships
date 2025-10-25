@@ -1,4 +1,7 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+
+import { api_url } from '@/config';
 
 import {
   Popover,
@@ -41,6 +44,8 @@ import { IsLoggedIn } from '@/services/authService';
 import { getAuth } from 'firebase/auth';
 
 import { getUserSettings, saveUserSettings } from '@/services/userSettingService';
+
+import VesselSidebar from './VesselSidebar';
 
 // Vessel Layer Configuration
 const VESSEL_LAYER_CONFIG = [
@@ -289,6 +294,26 @@ const Map = React.memo(({}) => {
 
     const isMobile = useIsMobile();
 
+    // Try to find a vessel in the currently loaded DeckGL layers (sync, no network)
+    const findVesselInLayers = useCallback((mmsi: string) => {
+        if (!allLayers || allLayers.length === 0) return null;
+
+        for (const layer of allLayers) {
+            const data = (layer && (layer.props?.data ?? layer.props?.getData?.()));
+            if (!Array.isArray(data)) continue;
+
+            const found = data.find((d: any) => {
+                if (!d) return false;
+                const vesselMMSI = d.MMSI ?? d.mmsi ?? d.MMSI?.toString?.();
+                return vesselMMSI?.toString() === mmsi.toString();
+            });
+
+            if (found) return found;
+        }
+
+        return null;
+    }, [allLayers]);
+
     const logStateChange = (source: string, data: any) => {
         console.log(`[${source}]`, data);
     };
@@ -323,6 +348,82 @@ const Map = React.memo(({}) => {
     loadSettings();
 }, [isLoggedIn]);
 
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    // Ship Select const
+    const [selectedVessel, setSelectedVessel] = useState(null);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+
+    const fetchVesselByMMSI = useCallback(async (mmsi: string) => {
+            try {
+                    const response = await fetch(`${api_url}/v1/vessels/position/${mmsi}`);
+                    if (response.ok) {
+                            const data = await response.json();
+                            return data;
+                    }
+                    return null;
+            } catch (err) {
+                    console.error('Failed to fetch vessel by MMSI:', err);
+                    return null;
+            }
+    }, []);
+
+    useEffect(() => {
+        const vesselMMSI = searchParams.get('selectedVessel');
+        if (!vesselMMSI) return;
+
+        let cancelled = false;
+
+        const findAndSelect = async () => {
+            try {
+                // First try a synchronous lookup in currently loaded layers
+                const localVessel = findVesselInLayers(vesselMMSI);
+                if (cancelled) return;
+
+                if (localVessel) {
+                    setSelectedVessel(localVessel);
+                    setSidebarOpen(true);
+                    return;
+                }
+
+                // Otherwise fall back to the API fetch
+                const vesselData = await fetchVesselByMMSI(vesselMMSI);
+                if (cancelled) return;
+
+                if (!vesselData) return;
+
+                if (vesselData.Latitude != null && vesselData.Longitude != null) {
+                    setViewState(prev => ({
+                        ...prev,
+                        latitude: vesselData.Latitude,
+                        longitude: vesselData.Longitude,
+                        zoom: Math.max(prev.zoom, 10)
+                    }));
+                }
+
+                setSelectedVessel(vesselData);
+                setSidebarOpen(true);
+            } catch (err) {
+                console.error('Error selecting vessel from search params:', err);
+            }
+        };
+
+        findAndSelect();
+
+        return () => { cancelled = true; };
+    }, [searchParams, fetchVesselByMMSI, findVesselInLayers]);
+
+    const handleVesselSelect = useCallback((info: any) => {
+        if (info.object && (info.layer?.id?.includes('vessel') || info.layer?.id?.includes('craft'))) {
+            setSelectedVessel(info.object);
+            setSidebarOpen(true);
+
+            setSearchParams({ selectedVessel: info.object.MMSI.toString() });
+        }
+    }, [setSearchParams]);
+
+    
+
     return (
         <>
             <DeckGL
@@ -334,6 +435,7 @@ const Map = React.memo(({}) => {
                 getTooltip={() => null}
                 getCursor={() => 'grab'}
                 style={{ position: 'absolute', width: '100vw', height: '100vh' }}
+                onClick={handleVesselSelect}
             >
                 {/* Layer Control */}
                 <div className={`absolute ${isMobile ? "top-6 right-6" : "top-20 right-4"} z-50`}>
@@ -436,6 +538,16 @@ const Map = React.memo(({}) => {
                     </Popover>
                 </div>
             </DeckGL>
+
+            <VesselSidebar 
+                vessel={selectedVessel}
+                isOpen={sidebarOpen}
+                onClose={() => {
+                  setSidebarOpen(false);
+                  setSelectedVessel(null);
+                  setSearchParams({});
+                }}
+            />
         </>
     );
 });
