@@ -17,6 +17,7 @@ function App() {
 					<Routes>
 
 						<Route path="/" element={<Map />}/>
+						<Route path="/map" element={<Map />}/>
 						<Route path="/vessels" element={<div className='mt-30 text-center'>Vessels</div>}/>
 						<Route path="/gallery" element={<div className='mt-30 text-center'>Vessel Gallery</div>}/>
 						<Route path="/account" element={<AccountPage />}/>

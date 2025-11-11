@@ -1,8 +1,6 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, use } from 'react';
 import { useSearchParams } from 'react-router-dom';
-
 import { api_url } from '@/config';
-
 import {
   Popover,
   PopoverContent,
@@ -15,16 +13,11 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-
 import { FaLayerGroup } from "react-icons/fa";
-
 import DeckGL from '@deck.gl/react';
 import { MapView, WebMercatorViewport } from '@deck.gl/core';
-
 import useIsMobile from '@/hooks/isMobile';
-
 import { createOSMLayer } from './Maps/OpenStreetMapLayer';
-
 import WIGVesselLayer from './Vessels/WIGVesselLayer';
 import FishingVesselLayer from './Vessels/FishingVesselLayer';
 import TowingVesselLayer from './Vessels/TowingVesselLayer';
@@ -39,12 +32,9 @@ import CargoVesselLayer from './Vessels/CargoVesselLayer';
 import TankerVesselLayer from './Vessels/TankerVesselLayer';
 import SailingVesselLayer from './Vessels/SailingVesselLayer';
 import OtherVesselLayer from './Vessels/OtherVesselLayer';
-
 import { IsLoggedIn } from '@/services/authService';
 import { getAuth } from 'firebase/auth';
-
 import { getUserSettings, saveUserSettings } from '@/services/userSettingService';
-
 import VesselSidebar from './VesselSidebar';
 
 // Vessel Layer Configuration
@@ -370,7 +360,13 @@ const Map = React.memo(({}) => {
 
     useEffect(() => {
         const vesselMMSI = searchParams.get('selectedVessel');
-        if (!vesselMMSI) return;
+        
+        if (!vesselMMSI) {
+            // Explicitly clear selection when parameter is removed
+            setSelectedVessel(null);
+            setSidebarOpen(false);
+            return;
+        }
 
         let cancelled = false;
 
@@ -416,13 +412,10 @@ const Map = React.memo(({}) => {
     const handleVesselSelect = useCallback((info: any) => {
         if (info.object && (info.layer?.id?.includes('vessel') || info.layer?.id?.includes('craft'))) {
             setSelectedVessel(info.object);
-            setSidebarOpen(true);
-
             setSearchParams({ selectedVessel: info.object.MMSI.toString() });
+            setSidebarOpen(true);
         }
     }, [setSearchParams]);
-
-    
 
     return (
         <>
@@ -543,9 +536,9 @@ const Map = React.memo(({}) => {
                 vessel={selectedVessel}
                 isOpen={sidebarOpen}
                 onClose={() => {
-                  setSidebarOpen(false);
-                  setSelectedVessel(null);
-                  setSearchParams({});
+                    setSearchParams({});
+                    setSelectedVessel(null);
+                    setSidebarOpen(false);
                 }}
             />
         </>
