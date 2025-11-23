@@ -1,16 +1,12 @@
 import type { VesselPosition } from "@/types/VesselTypes";
 import useIsMobile from "@/hooks/isMobile";
-import { use } from "react";
 
 import {
   	Drawer,
  	DrawerClose,
  	DrawerContent,
-  	DrawerDescription,
-  	DrawerFooter,
   	DrawerHeader,
   	DrawerTitle,
-  	DrawerTrigger,
 } from "@/components/ui/drawer"
 
 interface VesselSidebarProps {
@@ -22,18 +18,47 @@ interface VesselSidebarProps {
 const VesselSidebar = ({ vessel, isOpen, onClose }: VesselSidebarProps) => {
 	
 	if (useIsMobile()) {
-		
-		return (
-			<Drawer open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
-				<DrawerContent className="sm:max-w-[425px] h-60">
-					<DrawerHeader>
-						<DrawerTitle>Vessel Details</DrawerTitle>
-						<DrawerClose />
-					</DrawerHeader>
-				</DrawerContent>
-			</Drawer>
-		);
-	}
+        
+        return (
+            <Drawer 
+        	    open={isOpen} 
+        	    onOpenChange={(open) => { 
+        	        // Nur reagieren wenn der Drawer durch Swipe geschlossen wird,
+        	        // nicht wenn er durch externe State-Änderung (Map-Click) geschlossen wird
+        	        if (!open && isOpen) {
+        	            onClose();
+        	        }
+        	    }} 
+        	    dismissible={true}
+        	    modal={false}
+        	>
+                <DrawerContent className="w-full h-fit">
+                    <DrawerHeader>
+                        <DrawerTitle>Vessel Details</DrawerTitle>
+                        <DrawerClose />
+                    </DrawerHeader>
+                    {vessel && (
+                        <div className="p-4 space-y-3">
+                            <div><strong>Name:</strong> {vessel.ShipName || 'Unknown'}</div>
+                            <div><strong>MMSI:</strong> {vessel.MMSI}</div>
+                            <div>
+                                <strong>Speed:</strong>{' '}
+                                {typeof vessel.SpeedOverGround === 'number' && Number.isFinite(vessel.SpeedOverGround) ? `${vessel.SpeedOverGround} knots` : 'Unknown'}
+                            </div>
+                            <div>
+                                <strong>Course:</strong>{' '}
+                                {typeof vessel.CourseOverGround === 'number' && Number.isFinite(vessel.CourseOverGround) ? `${vessel.CourseOverGround}°` : 'Unknown'}
+                            </div>
+                            <div>
+                                <strong>Position:</strong>{' '}
+                                {typeof vessel.Latitude === 'number' && typeof vessel.Longitude === 'number' ? `${vessel.Latitude.toFixed(4)}, ${vessel.Longitude.toFixed(4)}` : 'Unknown'}
+                            </div>
+                        </div>
+                    )}
+                </DrawerContent>
+            </Drawer>
+        );
+    }
 	
 	return (
 		<div className={`

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect, use } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { api_url } from '@/config';
 import {
@@ -410,12 +410,18 @@ const Map = React.memo(({}) => {
     }, [searchParams, fetchVesselByMMSI, findVesselInLayers]);
 
     const handleVesselSelect = useCallback((info: any) => {
-        if (info.object && (info.layer?.id?.includes('vessel') || info.layer?.id?.includes('craft'))) {
+        const isVesselClick = info.object && (info.layer?.id?.includes('vessel') || info.layer?.id?.includes('craft'));
+        
+        if (isVesselClick) {
             setSelectedVessel(info.object);
             setSearchParams({ selectedVessel: info.object.MMSI.toString() });
             setSidebarOpen(true);
+        } else if (sidebarOpen) {  // Schließen sowohl auf Desktop als auch Mobile bei Map-Click
+            setSearchParams({});
+            setSelectedVessel(null);
+            setSidebarOpen(false);
         }
-    }, [setSearchParams]);
+    }, [setSearchParams, sidebarOpen]);
 
     return (
         <>
@@ -430,6 +436,14 @@ const Map = React.memo(({}) => {
                 style={{ position: 'absolute', width: '100vw', height: '100vh' }}
                 onClick={handleVesselSelect}
             >
+                {/* OpenStreetMap Watermark if OSM layer is enabled */}
+                {layerVisibility.osm && (
+                    <div className={`absolute ${isMobile ? "top-4 left-4" : "bottom-4 left-4"} z-50 text-xs bg-white/70 px-2 py-1 rounded-md dark:bg-gray-900 dark:text-white`}>
+                        Map data © <a href="https://www.openstreetmap.org/" target="_blank" rel="noopener noreferrer" className="underline">OpenStreetMap</a> contributors
+                    </div>
+                )}
+
+
                 {/* Layer Control */}
                 <div className={`absolute ${isMobile ? "top-6 right-6" : "top-20 right-4"} z-50`}>
                     <Popover>
