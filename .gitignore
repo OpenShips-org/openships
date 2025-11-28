@@ -1,5 +1,51 @@
-node_modules
-.env
-dist
-.idea
+# Node
+node_modules/
 package-lock.json
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Build output
+dist/
+out/
+build/
+.vite/
+.vite/deps/
+
+# Caches
+.cache/
+.parcel-cache/
+
+# Coverage
+coverage/
+.nyc_output/
+
+# TypeScript
+*.tsbuildinfo
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE / editors
+.idea/
+.vscode/
+*.iml
+.vscode/*
+
+# Misc
+.sass-cache/
+.pnp.cjs
+.pnp.js
+*.tgz
+*.zip
+.vs/
