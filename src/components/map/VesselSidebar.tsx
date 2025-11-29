@@ -23,8 +23,6 @@ const VesselSidebar = ({ vessel, isOpen, onClose }: VesselSidebarProps) => {
             <Drawer 
         	    open={isOpen} 
         	    onOpenChange={(open) => { 
-        	        // Nur reagieren wenn der Drawer durch Swipe geschlossen wird,
-        	        // nicht wenn er durch externe State-Änderung (Map-Click) geschlossen wird
         	        if (!open && isOpen) {
         	            onClose();
         	        }
@@ -62,7 +60,7 @@ const VesselSidebar = ({ vessel, isOpen, onClose }: VesselSidebarProps) => {
 	
 	return (
 		<div className={`
-			fixed top-16 left-0 h-full w-80 bg-black shadow-lg z-50 
+			fixed top-16 left-0 h-full w-80 bg-white dark:bg-black shadow-lg z-50 
 			transform transition-transform duration-300 ease-in-out
 			${isOpen && vessel ? 'translate-x-0' : '-translate-x-80'}
 		`}>
