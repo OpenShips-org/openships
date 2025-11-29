@@ -1,23 +1,24 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { api_url } from '@/config';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import { Checkbox } from "@/components/ui/checkbox"
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
-import { FaLayerGroup } from "react-icons/fa";
+import React, { useState, useMemo, useEffect } from 'react';
+
+// Deck.gl Imports
 import DeckGL from '@deck.gl/react';
-import { MapView, WebMercatorViewport } from '@deck.gl/core';
+import { MapView } from '@deck.gl/core';
 import useIsMobile from '@/hooks/isMobile';
-import { createOSMLayer } from './Maps/OpenStreetMapLayer';
+
+// Hook Imports
+import { useLayerVisibility } from '@/hooks/useLayerVisibility';
+import { useMapPosition } from '@/hooks/useMapPosition';
+import { useVesselSelection } from '@/hooks/useVesselSelection';
+
+// Service Imports
+import { IsLoggedIn } from '@/services/authService';
+
+// Component Imports
+import LayerControl from './LayerControl';
+import VesselSidebar from './VesselSidebar';
+import OsmWatermark from '../misc/osmWatermark';
+
+// Import Vessel Layers
 import WIGVesselLayer from './Vessels/WIGVesselLayer';
 import FishingVesselLayer from './Vessels/FishingVesselLayer';
 import TowingVesselLayer from './Vessels/TowingVesselLayer';
@@ -32,186 +33,32 @@ import CargoVesselLayer from './Vessels/CargoVesselLayer';
 import TankerVesselLayer from './Vessels/TankerVesselLayer';
 import SailingVesselLayer from './Vessels/SailingVesselLayer';
 import OtherVesselLayer from './Vessels/OtherVesselLayer';
-import { IsLoggedIn } from '@/services/authService';
-import { getAuth } from 'firebase/auth';
-import { getUserSettings, saveUserSettings } from '@/services/userSettingService';
-import VesselSidebar from './VesselSidebar';
 
-// Vessel Layer Configuration
-const VESSEL_LAYER_CONFIG = [
-  { key: 'wigVessels' as const, Component: WIGVesselLayer, label: 'Wing in Ground Vessels' },
-  { key: 'fishingVessels' as const, Component: FishingVesselLayer, label: 'Fishing Vessels' },
-  { key: 'towingVessels' as const, Component: TowingVesselLayer, label: 'Towing Vessels' },
-  { key: 'militaryVessels' as const, Component: MilitaryVesselLayer, label: 'Military Vessels' },
-  { key: 'sailingVessels' as const, Component: SailingVesselLayer, label: 'Sailing Vessels' },
-  { key: 'pleasureCrafts' as const, Component: PleasureCraftLayer, label: 'Pleasure Crafts' },
-  { key: 'highSpeedCrafts' as const, Component: HSCLayer, label: 'High Speed Crafts' },
-  { key: 'tugs' as const, Component: TugLayer, label: 'Tugs' },
-  { key: 'lawEnforcement' as const, Component: LawEnforcementVesselLayer, label: 'Law Enforcement' },
-  { key: 'medicalTransport' as const, Component: MedicalTransportLayer, label: 'Medical Transport' },
-  { key: 'passengerVessels' as const, Component: PassengerVesselLayer, label: 'Passenger Vessels' },
-  { key: 'cargoVessels' as const, Component: CargoVesselLayer, label: 'Cargo Vessels' },
-  { key: 'tankerVessels' as const, Component: TankerVesselLayer, label: 'Tankers' },
-  { key: 'otherVessels' as const, Component: OtherVesselLayer, label: 'Other Vessels' },
-];
+// Import Map Layers
+import OpenStreetMapLayer from './Maps/OpenStreetMapLayer';
 
-interface ViewportBounds {
-    minLat: number;
-    maxLat: number;
-    minLon: number;
-    maxLon: number;
-}
-
-// Debounce helper function
-const debounce = (func: Function, delay: number) => {
-  let timeoutId: number | undefined;
-  return (...args: any[]) => {
-    if (timeoutId) {
-      window.clearTimeout(timeoutId);
-    }
-    timeoutId = window.setTimeout(() => func(...args), delay);
-  };
-};
-
-const Map = React.memo(({}) => {
-
-    // Load initial view state from localStorage
-    const [viewState, setViewState] = useState(() => {
-        const savedPosition = localStorage.getItem('mapPosition');
-        if (savedPosition) {
-            try {
-                const { latitude, longitude, zoom } = JSON.parse(savedPosition);
-                return { latitude, longitude, zoom, pitch: 0, bearing: 0 };
-            } catch (err) {
-                console.error('Failed to parse saved map position:', err);
-            }
-        }
-        return {
-            latitude: 20,
-            longitude: 0,
-            zoom: 2,
-            pitch: 0,
-            bearing: 0
-        };
-    });
-
-    const [layerVisibility, setLayerVisibility] = useState({
-        osm: true,
-        wigVessels: true,
-        fishingVessels: true,
-        towingVessels: true,
-        militaryVessels: true,
-        pleasureCrafts: true,
-        highSpeedCrafts: true,
-        tugs: true,
-        lawEnforcement: true,
-        medicalTransport: true,
-        passengerVessels: true,
-        cargoVessels: true,
-        tankerVessels: true,
-        sailingVessels: true,
-        otherVessels: true,
-        vesselNames: false,
-        lighthouse: false,
-    });
-
-    const [viewportBounds, setViewportBounds] = useState<ViewportBounds>();
-
+const Map = React.memo(() => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const isMobile = useIsMobile();
 
     useEffect(() => {
-        const checkLoginStatus = async () => {
-            try {
-                const loggedIn = await IsLoggedIn();
-                setIsLoggedIn(loggedIn);
-            } catch (err) {
-                console.error('Error checking login status:', err);
-                setIsLoggedIn(false);
-            }
-        };
-
-        checkLoginStatus();
-    }, []);
-    
-    // Debounced localStorage saving
-    const savePositionToLocalStorage = useCallback(
-        debounce((newViewState: any) => {
-            const positionToSave = {
-                longitude: newViewState.longitude,
-                latitude: newViewState.latitude,
-                zoom: newViewState.zoom,
-            };
-            localStorage.setItem('mapPosition', JSON.stringify(positionToSave));
-        }, 300),
-        []
-    );
-
-    // Update viewport bounds
-    const updateViewportBounds = useCallback((vs: any) => {
-        if (!vs) return;
-        try {
-            const viewport = new WebMercatorViewport({
-                ...vs,
-                width: window.innerWidth,
-                height: window.innerHeight
-            });
-            const bounds = viewport.getBounds();
-            setViewportBounds({
-                minLon: bounds[0],
-                minLat: bounds[1],
-                maxLon: bounds[2],
-                maxLat: bounds[3]
-            });
-        } catch (err) {
-            console.error('Failed to update viewport bounds:', err);
-        }
+        IsLoggedIn()
+            .then(setIsLoggedIn)
+            .catch(() => setIsLoggedIn(false));
     }, []);
 
-    // Initial viewport bounds
-    useEffect(() => {
-        updateViewportBounds(viewState);
-    }, [viewState, updateViewportBounds]);
+    const { layerVisibility, toggleLayer } = useLayerVisibility(isLoggedIn);
+    const { viewState, setViewState, viewportBounds, onViewStateChange } = useMapPosition();
 
-    // Memoized handler for view state changes
-    const onViewStateChange = useCallback(({ viewState: newViewState }: { viewState: any }) => {
-        setViewState(newViewState);
-        savePositionToLocalStorage(newViewState);
-        updateViewportBounds(newViewState);
-    }, [savePositionToLocalStorage, updateViewportBounds]);
-
-    // Memoize controller options
     const controller = useMemo(() => ({
         scrollZoom: { smooth: true, speed: 0.1 },
         dragRotate: false,
         keyboard: true,
         touchRotate: false
     }), []);
-    
-    const toggleLayer = useCallback((layerName: keyof typeof layerVisibility) => {
-        setLayerVisibility(prev => {
-            const newVisibility = { ...prev, [layerName]: !prev[layerName] };
-            logStateChange('Toggle layer', { layerName, newState: !prev[layerName] });
 
-            try {
-                // Double-check current auth state directly
-                const auth = getAuth(); // Import getAuth from firebase/auth at the top
-                const currentUser = auth.currentUser;
-
-                if (currentUser && isLoggedIn) {
-                    saveUserSettings('mapLayerVisibility', newVisibility)
-                        .then(() => logStateChange('Saved to Firestore', newVisibility))
-                        .catch(err => console.error('Failed to save user settings:', err));
-                } else {
-                    localStorage.setItem('mapLayerVisibility', JSON.stringify(newVisibility));
-                    logStateChange('Saved to localStorage', newVisibility);
-                }
-            } catch (err) {
-                console.error('Error saving layer visibility:', err);
-            }
-
-            return newVisibility;
-        });
-    }, [isLoggedIn]);
+    // Call all map layer hooks at the top level
+    const osmLayer = OpenStreetMapLayer({ visible: layerVisibility.osm });
 
     // Call all vessel layer hooks at the top level
     const wigVesselLayers = WIGVesselLayer({ visible: layerVisibility.wigVessels, viewportBounds, showNames: layerVisibility.vesselNames });
@@ -231,13 +78,14 @@ const Map = React.memo(({}) => {
 
     // Combine all layers
     const allLayers = useMemo(() => {
-        const layers: any[] = [];
+        const layers: unknown[] = [];
         
-        if (layerVisibility.osm) {
-            layers.push(createOSMLayer());
+        // Add OSM layer first (background)
+        if (osmLayer) {
+            layers.push(osmLayer);
         }
         
-        // Add vessel layers (handle both single layer and array)
+        // Add vessel layers
         const vesselLayerResults = [
             wigVesselLayers,
             fishingVesselLayers,
@@ -265,7 +113,7 @@ const Map = React.memo(({}) => {
         
         return layers;
     }, [
-        layerVisibility.osm,
+        osmLayer,
         wigVesselLayers,
         fishingVesselLayers,
         towingVesselLayers,
@@ -282,151 +130,13 @@ const Map = React.memo(({}) => {
         otherVesselLayers,
     ]);
 
-    const isMobile = useIsMobile();
-
-    // Try to find a vessel in the currently loaded DeckGL layers (sync, no network)
-    const findVesselInLayers = useCallback((mmsi: string) => {
-        if (!allLayers || allLayers.length === 0) return null;
-
-        for (const layer of allLayers) {
-            const data = (layer && (layer.props?.data ?? layer.props?.getData?.()));
-            if (!Array.isArray(data)) continue;
-
-            const found = data.find((d: any) => {
-                if (!d) return false;
-                const vesselMMSI = d.MMSI ?? d.mmsi ?? d.MMSI?.toString?.();
-                return vesselMMSI?.toString() === mmsi.toString();
-            });
-
-            if (found) return found;
-        }
-
-        return null;
-    }, [allLayers]);
-
-    const logStateChange = (source: string, data: any) => {
-        console.log(`[${source}]`, data);
-    };
-
-    // Load user Settings from firestore if logged in, otherwise use localStorage
-    useEffect(() => {
-    const loadSettings = async () => {
-        try {
-            if (isLoggedIn) {
-                const settings = await getUserSettings('mapLayerVisibility');
-                if (settings) {
-                    logStateChange('Firestore settings loaded', settings);
-                    setLayerVisibility(prev => ({ ...prev, ...settings }));
-                } else {
-                    logStateChange('No Firestore settings found', null);
-                }
-            } else {
-                const savedSettings = localStorage.getItem('mapLayerVisibility');
-                if (savedSettings) {
-                    const parsedSettings = JSON.parse(savedSettings);
-                    logStateChange('LocalStorage settings loaded', parsedSettings);
-                    setLayerVisibility(prev => ({ ...prev, ...parsedSettings }));
-                } else {
-                    logStateChange('No localStorage settings found', null);
-                }
-            }
-        } catch (err) {
-            console.error('Error loading layer visibility settings:', err);
-        }
-    };
-    
-    loadSettings();
-}, [isLoggedIn]);
-
-    const [searchParams, setSearchParams] = useSearchParams();
-
-    // Ship Select const
-    const [selectedVessel, setSelectedVessel] = useState(null);
-    const [sidebarOpen, setSidebarOpen] = useState(false);
-
-    const fetchVesselByMMSI = useCallback(async (mmsi: string) => {
-            try {
-                    const response = await fetch(`${api_url}/v1/vessels/position/${mmsi}`);
-                    if (response.ok) {
-                            const data = await response.json();
-                            return data;
-                    }
-                    return null;
-            } catch (err) {
-                    console.error('Failed to fetch vessel by MMSI:', err);
-                    return null;
-            }
-    }, []);
-
-    useEffect(() => {
-        const vesselMMSI = searchParams.get('selectedVessel');
-        
-        if (!vesselMMSI) {
-            // Explicitly clear selection when parameter is removed
-            setSelectedVessel(null);
-            setSidebarOpen(false);
-            return;
-        }
-
-        let cancelled = false;
-
-        const findAndSelect = async () => {
-            try {
-                // First try a synchronous lookup in currently loaded layers
-                const localVessel = findVesselInLayers(vesselMMSI);
-                if (cancelled) return;
-
-                if (localVessel) {
-                    setSelectedVessel(localVessel);
-                    setSidebarOpen(true);
-                    return;
-                }
-
-                // Otherwise fall back to the API fetch
-                const vesselData = await fetchVesselByMMSI(vesselMMSI);
-                if (cancelled) return;
-
-                if (!vesselData) return;
-
-                if (vesselData.Latitude != null && vesselData.Longitude != null) {
-                    setViewState(prev => ({
-                        ...prev,
-                        latitude: vesselData.Latitude,
-                        longitude: vesselData.Longitude,
-                        zoom: Math.max(prev.zoom, 10)
-                    }));
-                }
-
-                setSelectedVessel(vesselData);
-                setSidebarOpen(true);
-            } catch (err) {
-                console.error('Error selecting vessel from search params:', err);
-            }
-        };
-
-        findAndSelect();
-
-        return () => { cancelled = true; };
-    }, [searchParams, fetchVesselByMMSI, findVesselInLayers]);
-
-    const handleVesselSelect = useCallback((info: any) => {
-        const isVesselClick = info.object && (info.layer?.id?.includes('vessel') || info.layer?.id?.includes('craft'));
-        
-        if (isVesselClick) {
-            setSelectedVessel(info.object);
-            setSearchParams({ selectedVessel: info.object.MMSI.toString() });
-            setSidebarOpen(true);
-        } else if (sidebarOpen) {  // Schließen sowohl auf Desktop als auch Mobile bei Map-Click
-            setSearchParams({});
-            setSelectedVessel(null);
-            setSidebarOpen(false);
-        }
-    }, [setSearchParams, sidebarOpen]);
+    const { selectedVessel, sidebarOpen, handleVesselSelect, closeVesselSidebar } = 
+        useVesselSelection(allLayers, setViewState);
 
     return (
         <>
             <DeckGL
-                layers={allLayers}
+                layers={allLayers as any}
                 views={new MapView({ repeat: true })}
                 viewState={viewState}
                 onViewStateChange={onViewStateChange}
@@ -436,124 +146,19 @@ const Map = React.memo(({}) => {
                 style={{ position: 'absolute', width: '100vw', height: '100vh' }}
                 onClick={handleVesselSelect}
             >
-                {/* OpenStreetMap Watermark if OSM layer is enabled */}
-                {layerVisibility.osm && (
-                    <div className={`absolute ${isMobile ? "top-4 left-4" : "bottom-4 left-4"} z-50 text-xs bg-white/70 px-2 py-1 rounded-md dark:bg-gray-900 dark:text-white`}>
-                        Map data © <a href="https://www.openstreetmap.org/" target="_blank" rel="noopener noreferrer" className="underline">OpenStreetMap</a> contributors
-                    </div>
-                )}
-
-
-                {/* Layer Control */}
-                <div className={`absolute ${isMobile ? "top-6 right-6" : "top-20 right-4"} z-50`}>
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <div className="bg-white/70 p-2.5 rounded-full cursor-pointer text-xl hover:bg-white/90 transition-colors dark:bg-gray-900 dark:text-white">
-                                <FaLayerGroup />
-                            </div>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-55 mr-3 mt-1">
-                            <Accordion type="single" collapsible className="w-full">
-                                
-                                <AccordionItem value="layers">
-                                    <AccordionTrigger className='cursor-pointer'>Maps</AccordionTrigger>
-                                    <AccordionContent>
-                                        <div className="flex flex-col space-y-2 mt-2">
-                                            
-                                            {/* OpenStreetMap Layer */}
-                                            <div className="flex items-center space-x-2">
-                                                <Checkbox
-                                                    id="osm-layer"
-                                                    checked={layerVisibility.osm}
-                                                    onCheckedChange={() => toggleLayer('osm')}
-                                                    className="cursor-pointer"
-                                                />
-                                                <label htmlFor="osm-layer" className="text-sm cursor-pointer">OpenStreetMap</label>
-                                            </div>
-                                        
-                                        </div>
-                                    </AccordionContent>
-                                </AccordionItem>
-
-                                <AccordionItem value="buildings">
-                                    <AccordionTrigger className='cursor-pointer'>Buildings</AccordionTrigger>
-                                    <AccordionContent>
-                                        <div className="flex flex-col space-y-2 mt-2">
-                                            
-                                            {/* Ports */}
-                                            <div className="flex items-center space-x-2">
-                                                <Checkbox
-                                                    id="ports-layer"
-                                                    checked={false}
-                                                    onCheckedChange={() => {}}
-                                                    className='cursor-pointer'
-                                                />
-                                                <label htmlFor="ports-layer" className="text-sm cursor-pointer">Ports</label>
-                                            </div>
-
-                                            {/* Lighthouses */}
-                                            <div className="flex items-center space-x-2">
-                                                <Checkbox
-                                                    id="lighthouse-layer"
-                                                    checked={layerVisibility.lighthouse}
-                                                    onCheckedChange={() => toggleLayer('lighthouse')}
-                                                    className='cursor-pointer'
-                                                />
-                                                <label htmlFor="lighthouse-layer" className="text-sm cursor-pointer">Lighthouses</label>
-                                            </div>
-                                        
-                                        </div>
-                                    </AccordionContent>
-                                </AccordionItem>
-
-                                <AccordionItem value="vessels">
-                                    <AccordionTrigger className='cursor-pointer'>Vessels</AccordionTrigger>
-                                    <AccordionContent>
-                                        <div className="flex flex-col space-y-2 mt-2">
-
-                                            {/* Vessel Names Toggle */}
-                                            <div className="flex items-center space-x-2 pb-2 border-b">
-                                                <Checkbox
-                                                    id="vessel-names-layer"
-                                                    checked={layerVisibility.vesselNames}
-                                                    onCheckedChange={() => toggleLayer('vesselNames')}
-                                                    className="cursor-pointer"
-                                                />
-                                                <label htmlFor="vessel-names-layer" className="text-sm font-semibold cursor-pointer">Show Vessel Names</label>
-                                            </div>
-
-                                            <hr />
-
-                                            {VESSEL_LAYER_CONFIG.map(({ key, label }) => (
-                                                <div key={key} className="flex items-center space-x-2">
-                                                    <Checkbox
-                                                        id={`${key}-layer`}
-                                                        checked={layerVisibility[key]}
-                                                        onCheckedChange={() => toggleLayer(key)}
-                                                        className="cursor-pointer"
-                                                    />
-                                                    <label htmlFor={`${key}-layer`} className="text-sm cursor-pointer">{label}</label>
-                                                </div>
-                                            ))}
-
-                                        </div>
-                                    </AccordionContent>
-                                </AccordionItem>
-
-                            </Accordion>
-                        </PopoverContent>
-                    </Popover>
-                </div>
+                {layerVisibility.osm && <OsmWatermark isMobile={isMobile} />}
+                
+                <LayerControl 
+                    layerVisibility={layerVisibility}
+                    toggleLayer={toggleLayer}
+                    isMobile={isMobile}
+                />
             </DeckGL>
 
             <VesselSidebar 
                 vessel={selectedVessel}
                 isOpen={sidebarOpen}
-                onClose={() => {
-                    setSearchParams({});
-                    setSelectedVessel(null);
-                    setSidebarOpen(false);
-                }}
+                onClose={closeVesselSidebar}
             />
         </>
     );
