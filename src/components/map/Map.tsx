@@ -19,23 +19,23 @@ import VesselSidebar from './VesselSidebar';
 import OsmWatermark from '../misc/osmWatermark';
 
 // Import Vessel Layers
-import WIGVesselLayer from './Vessels/WIGVesselLayer';
-import FishingVesselLayer from './Vessels/FishingVesselLayer';
-import TowingVesselLayer from './Vessels/TowingVesselLayer';
-import MilitaryVesselLayer from './Vessels/MilitaryVesselLayer';
-import PleasureCraftLayer from './Vessels/PleasureCraftLayer';
-import HSCLayer from './Vessels/HSCLayer';
-import TugLayer from './Vessels/TugLayer';
-import LawEnforcementVesselLayer from './Vessels/LawEnforcementVesselLayer';
-import MedicalTransportLayer from './Vessels/MedicalTransportLayer';
-import PassengerVesselLayer from './Vessels/PassengerVesselLayer';
-import CargoVesselLayer from './Vessels/CargoVesselLayer';
-import TankerVesselLayer from './Vessels/TankerVesselLayer';
-import SailingVesselLayer from './Vessels/SailingVesselLayer';
-import OtherVesselLayer from './Vessels/OtherVesselLayer';
+import WIGVesselLayer from './Layer/Vessels/WIGVesselLayer';
+import FishingVesselLayer from './Layer/Vessels/FishingVesselLayer';
+import TowingVesselLayer from './Layer/Vessels/TowingVesselLayer';
+import MilitaryVesselLayer from './Layer/Vessels/MilitaryVesselLayer';
+import PleasureCraftLayer from './Layer/Vessels/PleasureCraftLayer';
+import HSCLayer from './Layer/Vessels/HSCLayer';
+import TugLayer from './Layer/Vessels/TugLayer';
+import LawEnforcementVesselLayer from './Layer/Vessels/LawEnforcementVesselLayer';
+import MedicalTransportLayer from './Layer/Vessels/MedicalTransportLayer';
+import PassengerVesselLayer from './Layer/Vessels/PassengerVesselLayer';
+import CargoVesselLayer from './Layer/Vessels/CargoVesselLayer';
+import TankerVesselLayer from './Layer/Vessels/TankerVesselLayer';
+import SailingVesselLayer from './Layer/Vessels/SailingVesselLayer';
+import OtherVesselLayer from './Layer/Vessels/OtherVesselLayer';
 
 // Import Map Layers
-import OpenStreetMapLayer from './Maps/OpenStreetMapLayer';
+import OpenStreetMapLayer from './Layer/Maps/OpenStreetMapLayer';
 
 const Map = React.memo(() => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
